@@ -1,6 +1,6 @@
 use cunzhi_cli::utils::terminal_launcher::{
     TerminalLauncher, TerminalLauncherConfig, TerminalType,
-    detect_system_terminal, launch_terminal_with_default_config
+    detect_system_terminal, launch_terminal_with_default_config, diagnose_terminal_availability
 };
 use std::env;
 
@@ -9,19 +9,24 @@ async fn main() -> anyhow::Result<()> {
     println!("🚀 寸止 CLI - 终端启动器测试程序");
     println!("═══════════════════════════════════════");
 
-    // 测试 1: 检测系统终端
-    println!("\n📋 测试 1: 检测当前系统可用的终端");
+    // 测试 1: 输出详细诊断报告
+    println!("\n📋 测试 1: 终端可用性详细诊断");
+    println!("{}", diagnose_terminal_availability());
+
+    // 测试 2: 检测系统终端
+    println!("\n📋 测试 2: 检测当前系统可用的终端");
     match detect_system_terminal() {
         Ok(terminal) => {
             println!("✅ 检测到最佳终端: {:?}", terminal);
         }
         Err(e) => {
             println!("❌ 检测终端失败: {}", e);
+            println!("💡 请查看上面的诊断报告了解详细信息");
         }
     }
 
-    // 测试 2: 列出所有可能的终端
-    println!("\n📋 测试 2: 检查各平台终端的可用性");
+    // 测试 3: 列出所有可能的终端
+    println!("\n📋 测试 3: 检查各平台终端的可用性");
     let launcher = TerminalLauncher::new(TerminalLauncherConfig::default());
     let candidates = if cfg!(target_os = "macos") {
         vec![
@@ -52,8 +57,8 @@ async fn main() -> anyhow::Result<()> {
         println!("  {} {:?}", status, terminal);
     }
 
-    // 测试 3: 获取用户确认是否测试终端启动
-    println!("\n📋 测试 3: 终端启动测试");
+    // 测试 4: 获取用户确认是否测试终端启动
+    println!("\n📋 测试 4: 终端启动测试");
     println!("是否要测试在新终端窗口中启动交互？(y/N): ");
 
     let mut input = String::new();
@@ -110,8 +115,8 @@ read -n 1
         println!("跳过终端启动测试");
     }
 
-    // 测试 4: 配置验证
-    println!("\n📋 测试 4: 配置功能验证");
+    // 测试 5: 配置验证
+    println!("\n📋 测试 5: 配置功能验证");
 
     // 测试默认配置
     let default_config = TerminalLauncherConfig::default();
