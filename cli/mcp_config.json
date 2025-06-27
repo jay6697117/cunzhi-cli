@@ -1,10 +1,10 @@
 {
   "mcpServers": {
     "cunzhi-cli": {
-      "command": "/usr/local/bin/cunzhi",
       "args": [
         "mcp-server"
       ],
+      "command": "/Users/zhangjinhui/Desktop/cunzhi-cli/cli/target/release/cunzhi",
       "env": {
         "RUST_LOG": "info"
       }
