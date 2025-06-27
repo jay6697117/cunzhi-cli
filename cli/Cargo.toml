@@ -1,0 +1,102 @@
+[package]
+name = "cunzhi-cli"
+version = "0.2.12"
+edition = "2021"
+default-run = "cunzhi"
+description = "寸止 CLI - 智能代码审查工具的命令行版本"
+authors = ["cunzhi team"]
+license = "MIT"
+repository = "https://github.com/imhuso/cunzhi"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "cunzhi"
+path = "src/main.rs"
+
+[[bin]]
+name = "cunzhi-server"
+path = "src/bin/mcp_server.rs"
+
+[[bin]]
+name = "test-config"
+path = "src/bin/test_config.rs"
+
+[[bin]]
+name = "test-compatibility"
+path = "src/bin/test_compatibility.rs"
+
+[[bin]]
+name = "test-logger"
+path = "src/bin/test_logger.rs"
+
+[[bin]]
+name = "test-init"
+path = "src/bin/test_init.rs"
+
+[[bin]]
+name = "test-ui"
+path = "src/bin/test_ui.rs"
+
+[[bin]]
+name = "test-interaction"
+path = "src/bin/test_interaction.rs"
+
+[[bin]]
+name = "test-terminal-launcher"
+path = "src/bin/test_terminal_launcher.rs"
+
+[dependencies]
+# CLI 相关依赖
+clap = { version = "4.0", features = ["derive"] }
+inquire = "0.7"
+console = "0.15"
+indicatif = "0.17"
+
+# 核心功能依赖
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.0", features = [
+  "rt-multi-thread", # MCP服务器和异步任务需要
+  "macros", # #[tokio::main] 宏需要
+  "fs", # 文件操作需要
+  "process", # Command::new() 需要
+  "sync", # oneshot channel 需要
+  "time" # sleep() 需要
+] }
+anyhow = "1.0"
+thiserror = "1.0"
+uuid = { version = "1.0", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+dirs = "5.0"
+
+# MCP 相关依赖 - 使用简化实现
+# 暂时移除外部MCP依赖，使用自定义实现
+
+# 工具依赖
+regex = "1.0"
+log = "0.4.27"
+env_logger = "0.11.8"
+base64 = "0.21"
+atty = "0.2"
+
+# MCP 服务器依赖 (使用简化实现)
+# rmcp = "0.1.0"  # 版本兼容性问题，使用自定义实现
+schemars = "0.8"
+hyper = { version = "1.0", features = ["full"] }
+hyper-util = { version = "0.1", features = ["full"] }
+http-body-util = "0.1"
+
+
+[dev-dependencies]
+tempfile = "3.8"
+tokio-test = "0.4"
+
+# 发布版本优化配置
+[profile.release]
+opt-level = "z" # 优化体积而非速度
+lto = true # 链接时优化，减少最终二进制大小
+codegen-units = 1 # 减少代码生成单元，提高优化效果
+panic = "abort" # 减少panic处理代码
+strip = true # 移除调试符号

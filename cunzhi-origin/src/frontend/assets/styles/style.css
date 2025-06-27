@@ -1,0 +1,63 @@
+/* 语义化 CSS 变量 - 由主题系统动态设置 */
+:root {
+  /* 默认使用深色主题的值，避免初始化闪烁 */
+  --color-surface: #101014;
+  --color-surface-50: #18181c;
+  --color-surface-100: #1f1f23;
+  --color-surface-200: #27272a;
+  --color-surface-300: #374151;
+  --color-surface-400: #4b5563;
+  --color-surface-500: #6b7280;
+  --color-surface-600: #9ca3af;
+  --color-surface-700: #d1d5db;
+  --color-surface-800: #e5e7eb;
+  --color-surface-900: #f3f4f6;
+  --color-surface-950: #f9fafb;
+  --color-on-surface: #e5e7eb;
+}
+
+/* UnoCSS 自定义样式 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 全局样式重置 */
+* {
+  box-sizing: border-box;
+}
+
+/* 基础字体设置 */
+:root {
+  --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-family-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+}
+
+html {
+  background-color: var(--body-color, #101014);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--body-color, #101014);
+  color: var(--text-color, #e5e7eb);
+  min-height: 100vh;
+}
+
+/* 确保引用块的边框在所有主题下都显示 */
+.markdown-content blockquote {
+  border-left: 4px solid #14b8a6 !important;
+  padding-left: 1rem !important;
+  margin-left: 0 !important;
+  font-style: italic !important;
+}

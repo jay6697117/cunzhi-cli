@@ -1,0 +1,18 @@
+{
+  "name": "完整配置",
+  "description": "启用所有功能，适合完整的代码审查工作流",
+  "config": {
+    "reply_config": {
+      "enable_continue_reply": true,
+      "auto_continue_threshold": 1000,
+      "continue_prompt": "请按照最佳实践继续"
+    },
+    "mcp_config": {
+      "tools": {
+        "zhi": true,
+        "ji": true
+      }
+    },
+    "version": "0.2.12"
+  }
+}
