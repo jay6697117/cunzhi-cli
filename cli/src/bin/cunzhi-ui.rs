@@ -62,6 +62,12 @@ fn execute_cli_interaction(request: &PopupRequest) -> Result<String> {
 
     println!("{}", "─".repeat(50));
 
+    // 检查是否在TTY环境中
+    if !atty::is(atty::Stream::Stdin) {
+        // 非TTY环境，使用简单的文本输入
+        return handle_non_tty_interaction(request);
+    }
+
     // 处理用户交互
     if let Some(ref options) = request.predefined_options {
         if !options.is_empty() {
@@ -74,6 +80,20 @@ fn execute_cli_interaction(request: &PopupRequest) -> Result<String> {
     // 没有预定义选项，直接获取用户输入
     Ok(EnhancedCliInteraction::handle_custom_input()
         .map_err(|e| anyhow::anyhow!("交互失败: {}", e))?)
+}
+
+/// 处理非TTY环境的交互（如测试环境）
+fn handle_non_tty_interaction(request: &PopupRequest) -> Result<String> {
+    // 在非TTY环境中，我们返回第一个预定义选项或默认响应
+    if let Some(ref options) = request.predefined_options {
+        if !options.is_empty() {
+            // 返回第一个选项作为默认选择
+            return Ok(options[0].clone());
+        }
+    }
+
+    // 没有预定义选项，返回默认响应
+    Ok("自动响应（非交互环境）".to_string())
 }
 
 /// 简单的Markdown渲染
