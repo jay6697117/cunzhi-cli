@@ -1,6 +1,7 @@
 use anyhow::Result;
-use crate::mcp::types::{McpError, CallToolResult, Content};
+use crate::mcp::types::{McpError, CallToolResult, Content, PopupRequest};
 use crate::mcp::ZhiRequest;
+use crate::mcp::handlers::popup::create_cli_popup;
 use crate::utils::{colorize, colorize_with_style, colors, terminal_launcher::TerminalLauncher};
 use inquire::{Select, Text, InquireError};
 use console::style;
@@ -8,11 +9,11 @@ use std::path::PathBuf;
 use std::env;
 
 /// 增强的CLI交互处理器
-struct EnhancedCliInteraction;
+pub struct EnhancedCliInteraction;
 
 impl EnhancedCliInteraction {
     /// 处理选项选择
-    fn handle_option_selection(options: &[String]) -> Result<String, McpError> {
+    pub fn handle_option_selection(options: &[String]) -> Result<String, McpError> {
         // 创建选项列表，包含自定义输入和取消选项
         let mut all_options = options.to_vec();
         all_options.push("自定义输入".to_string());
@@ -38,7 +39,7 @@ impl EnhancedCliInteraction {
     }
 
     /// 处理自定义输入
-    fn handle_custom_input() -> Result<String, McpError> {
+    pub fn handle_custom_input() -> Result<String, McpError> {
         let input = Text::new("请输入您的回复:")
             .with_help_message("输入内容后按回车确认，Ctrl+C 取消")
             .prompt()
@@ -71,47 +72,71 @@ impl InteractionTool {
     pub async fn zhi(
         request: ZhiRequest,
     ) -> Result<CallToolResult, McpError> {
-        // 检查是否请求终端模式
-        let terminal_mode = request.terminal_mode.unwrap_or(false);
+        // 首先尝试使用独立UI进程（类似原始项目的GUI方案）
+        match Self::handle_ui_process_interaction(&request).await {
+            Ok(response) => {
+                let content = vec![Content::text(response)];
+                return Ok(CallToolResult::success(content));
+            }
+            Err(e) => {
+                log::warn!("独立UI进程失败: {}", e);
 
-        if terminal_mode {
-            // 检查配置是否允许终端模式
-            if let Ok(config) = crate::config::load_standalone_config() {
-                if !config.terminal_config.enabled {
-                    log::info!("终端模式已在配置中禁用，使用 CLI 模式");
-                } else {
-                    // 尝试在新终端窗口中启动交互
-                    match Self::handle_terminal_interaction(&request).await {
-                        Ok(response) => {
-                            let content = vec![Content::text(response)];
-                            return Ok(CallToolResult::success(content));
-                        }
-                        Err(e) => {
-                            // 终端模式失败，根据配置决定是否回退
-                            log::warn!("终端模式失败: {}", e);
-
-                            if config.terminal_config.fallback_to_cli {
-                                log::info!("根据配置回退到 CLI 模式");
-                            } else {
-                                // 不允许回退，直接返回错误
-                                return Err(McpError::internal_error(
-                                    format!("终端模式失败且不允许回退: {}", e),
-                                    None
-                                ));
+                // 检查是否请求终端模式作为回退
+                let terminal_mode = request.terminal_mode.unwrap_or(false);
+                if terminal_mode {
+                    if let Ok(config) = crate::config::load_standalone_config() {
+                        if config.terminal_config.enabled {
+                            // 尝试在新终端窗口中启动交互
+                            match Self::handle_terminal_interaction(&request).await {
+                                Ok(response) => {
+                                    let content = vec![Content::text(response)];
+                                    return Ok(CallToolResult::success(content));
+                                }
+                                Err(e) => {
+                                    log::warn!("终端模式也失败: {}", e);
+                                }
                             }
                         }
                     }
                 }
-            } else {
-                log::warn!("无法加载配置，终端模式回退到 CLI 模式");
+
+                // 最后回退到CLI交互模式
+                log::info!("回退到CLI交互模式");
+                let response = Self::handle_cli_interaction(&request).await?;
+                let content = vec![Content::text(response)];
+                Ok(CallToolResult::success(content))
             }
         }
+    }
 
-        // 原有的 CLI 交互逻辑（作为回退方案）
-        log::debug!("使用 CLI 交互模式");
-        let response = Self::handle_cli_interaction(&request).await?;
-        let content = vec![Content::text(response)];
-        Ok(CallToolResult::success(content))
+    /// 处理独立UI进程交互（类似原始项目的GUI方案）
+    async fn handle_ui_process_interaction(request: &ZhiRequest) -> Result<String, McpError> {
+        use crate::mcp::types::PopupRequest;
+        use crate::mcp::handlers::popup::create_cli_popup;
+
+        // 生成请求ID
+        let request_id = uuid::Uuid::new_v4().to_string();
+
+        // 创建弹窗请求
+        let popup_request = PopupRequest {
+            id: request_id,
+            message: request.message.clone(),
+            predefined_options: if request.predefined_options.is_empty() {
+                None
+            } else {
+                Some(request.predefined_options.clone())
+            },
+            is_markdown: request.is_markdown,
+        };
+
+        // 调用独立UI进程
+        match create_cli_popup(&popup_request) {
+            Ok(response) => Ok(response),
+            Err(e) => Err(McpError::internal_error(
+                format!("UI进程交互失败: {}", e),
+                None
+            ))
+        }
     }
 
     /// 处理终端交互模式

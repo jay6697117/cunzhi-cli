@@ -20,6 +20,10 @@ name = "cunzhi-server"
 path = "src/bin/mcp_server.rs"
 
 [[bin]]
+name = "cunzhi-ui"
+path = "src/bin/cunzhi-ui.rs"
+
+[[bin]]
 name = "test-config"
 path = "src/bin/test_config.rs"
 
