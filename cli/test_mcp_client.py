@@ -121,29 +121,42 @@ def test_zhi_tool(server_process):
         "params": {
             "name": "zhi",
             "arguments": {
-                "message": "这是一个测试消息",
-                "predefined_options": ["选项1", "选项2", "取消"],
-                "is_markdown": False,
+                "message": "# 🧪 MCP测试\n\n这是一个通过MCP协议调用的测试消息。\n\n## 测试目标\n- 验证独立UI进程\n- 测试MCP通信\n- 确认用户交互",
+                "predefined_options": ["测试成功", "需要调试", "取消测试"],
+                "is_markdown": True,
                 "terminal_mode": False
             }
         }
     }
 
+    print("发送zhi工具调用请求...")
     request_json = json.dumps(zhi_request) + "\n"
     server_process.stdin.write(request_json)
     server_process.stdin.flush()
 
-    # 等待一段时间让交互完成
-    print("等待用户交互完成...")
-    time.sleep(3)
+    print("⏳ 等待独立UI进程处理用户交互...")
+    print("   (这将启动一个新的交互界面)")
 
-    # 尝试读取多行响应
+    # 等待足够的时间让用户完成交互
+    time.sleep(10)
+
+    # 尝试读取响应
     try:
         response_line = server_process.stdout.readline()
         if response_line.strip():
             response = json.loads(response_line.strip())
             print(f"✅ zhi工具响应: {response}")
-            return True
+
+            # 检查响应内容
+            if 'result' in response and 'content' in response['result']:
+                content = response['result']['content']
+                if content and len(content) > 0:
+                    user_response = content[0].get('text', '')
+                    print(f"📝 用户响应: {user_response}")
+                    return True
+
+            print("⚠️ 响应格式异常")
+            return False
         else:
             print("❌ 没有收到zhi工具响应")
             # 检查stderr
@@ -153,7 +166,8 @@ def test_zhi_tool(server_process):
             return False
     except json.JSONDecodeError as e:
         print(f"❌ JSON解析错误: {e}")
-        print(f"原始响应: {response_line}")
+        if 'response_line' in locals():
+            print(f"原始响应: {response_line}")
         return False
 
 if __name__ == "__main__":
